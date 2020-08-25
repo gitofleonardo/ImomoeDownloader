@@ -77,8 +77,12 @@
       <setting name="OPEN_NEW_TAB" value="false" />
     </FindUsagesManager>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/ImomoeDownloader" />
+  </component>
   <component name="PhpWorkspaceProjectConfiguration" backward_compatibility_performed="true" />
   <component name="ProjectId" id="1gZyT0IAZ3QeFkBkCnf8CCxxOwB" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectReloadState">
     <option name="STATE" value="0" />
   </component>
@@ -100,10 +104,11 @@
     <property name="dynamic.classpath" value="false" />
     <property name="last_opened_file_path" value="$USER_HOME$/Downloads/jsoup-1.13.1.jar!/" />
     <property name="project.structure.last.edited" value="Modules" />
-    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.proportion" value="0.15" />
     <property name="project.structure.side.proportion" value="0.2" />
     <property name="recentsLimit" value="5" />
     <property name="restartRequiresConfirmation" value="false" />
+    <property name="settings.editor.selected.configurable" value="settings.github" />
     <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="RecentsManager">
@@ -205,6 +210,7 @@
       <workItem from="1359379250712" duration="1302000" />
       <workItem from="1598336414474" duration="6359000" />
       <workItem from="1598342936597" duration="8386000" />
+      <workItem from="1598351343308" duration="482000" />
     </task>
     <servers />
   </component>
@@ -244,10 +250,10 @@
       <screen x="0" y="28" width="1920" height="1052" />
     </state>
     <state width="1874" height="288" key="GridCell.Tab.0.right/0.28.1920.1052@0.28.1920.1052" timestamp="1598351325562" />
-    <state x="649" y="145" key="SettingsEditor" timestamp="1598336744459">
+    <state x="204" y="177" key="SettingsEditor" timestamp="1598351824810">
       <screen x="0" y="28" width="1920" height="1052" />
     </state>
-    <state x="649" y="145" key="SettingsEditor/0.28.1920.1052@0.28.1920.1052" timestamp="1598336744459" />
+    <state x="204" y="177" key="SettingsEditor/0.28.1920.1052@0.28.1920.1052" timestamp="1598351824810" />
     <state x="541" y="272" key="new project wizard" timestamp="1598336666775">
       <screen x="0" y="28" width="1920" height="1052" />
     </state>
