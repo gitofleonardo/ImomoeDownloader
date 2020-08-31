@@ -1,7 +1,6 @@
 package cn.huangchengxi.imomoedown;
 
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
@@ -13,12 +12,13 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebHistory;
 import javafx.scene.web.WebView;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.Stage;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.awt.*;
+import java.io.File;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,13 +49,25 @@ public class Controller {
     public HBox historyBtnPane;
     @FXML
     public StackPane bottomPane;
+    @FXML
+    public Button aboutBtn;
+    @FXML
+    public Button downloadInfoBtn;
+    public TextField filenamePrefix;
+    public TextField filenameSuffix;
+    public TextField directory;
+    public Button selectDirBtn;
 
     private WebEngine webEngine;
+
+    private DownloadHelper downloadHelper=DownloadHelper.newInstance();
+
+    private String defaultLocation="/home/huangchengxi/Downloads";
 
     /**
      * initialize the components
      */
-    public void init(){
+    public void init(Stage stage){
         checkEngine();
         webEngine.load("http://imomoe.jp");
         makeSceneAutoAdjust();
@@ -68,17 +80,29 @@ public class Controller {
             forwardHistory();
         });
         historyBtnPane.getChildren().addAll(backBtn,forwardBtn);
-        Button aboutBtn=new Button("",new ImageView("caution.png"));
-        aboutBtn.setAlignment(Pos.CENTER_LEFT);
-        aboutBtn.setOnAction(actionEvent -> {
-            showAboutInfo();
+        aboutBtn.setGraphic(new ImageView("caution.png"));
+        downloadInfoBtn.setGraphic(new ImageView("ic_download.png"));
+        selectDirBtn.setOnAction(e->{
+            DirectoryChooser chooser=new DirectoryChooser();
+            File file=chooser.showDialog(stage);
+            if (file!=null){
+                defaultLocation=file.getAbsolutePath();
+                directory.setText(file.getAbsolutePath());
+            }
         });
-        bottomPane.getChildren().add(aboutBtn);
     }
+
+    /**
+     * make scene auto adjust when main window is resized
+     */
     private void makeSceneAutoAdjust(){
         gridPane.prefWidthProperty().bind(rootPane.widthProperty());
         gridPane.prefHeightProperty().bind(rootPane.heightProperty());
     }
+
+    /**
+     * browse the given url
+     */
     public void goUrl(){
         String url=urlField.getText();
         if (url==null || url.equals("")){
@@ -87,30 +111,55 @@ public class Controller {
         }
         webEngine.load(url);
     }
+
+    /**
+     * check if the engine is initialized when the app first started
+     */
     private void checkEngine(){
         if (webEngine==null){
             webEngine=webView.getEngine();
         }
     }
+
+    /**
+     * show alert dialog when go url is empty
+     *
+     */
     private void showEmptyAlert(){
         Alert alert=new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setContentText("Check you url format and try again!!");
         alert.showAndWait();
     }
+
+    /**
+     * refresh current page
+     */
     public void refreshPage(){
         webEngine.reload();
     }
+
+    /**
+     * go back through history stack
+     */
     public void backHistory(){
         WebHistory history=webEngine.getHistory();
         int backIndex=history.getCurrentIndex()>0?-1:0;
         history.go(backIndex);
     }
+
+    /**
+     * go forward through history stack
+     */
     public void forwardHistory(){
         try{
             webEngine.getHistory().go(1);
         }catch (Exception ignored){}
     }
+
+    /**
+     * check if the page contains available video
+     */
     public void check(){
         String url=checkDownloadAvailability();
         if (url!=null){
@@ -119,6 +168,12 @@ public class Controller {
             showDownloadNotAvailable();
         }
     }
+
+    /**
+     * check if current page contains available video for downloading,
+     * when there is, the download will be start automatically, if not, show alert
+     * @return video url, null if not available
+     */
     private String checkDownloadAvailability(){
         String url=getUrlFromPlay2();
         if (url==null){
@@ -132,6 +187,11 @@ public class Controller {
             return null;
         }
     }
+
+    /**
+     * get url from current page
+     * @return video urla
+     */
     private String getUrlFromPlay2(){
         try{
             Document document=webEngine.getDocument();
@@ -141,12 +201,21 @@ public class Controller {
             return null;
         }
     }
+
+    /**
+     * show alert if download not available
+     */
     private void showDownloadNotAvailable(){
         Alert alert=new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setContentText("This page does not contains available video to download.");
         alert.showAndWait();
     }
+
+    /**
+     * show alert if download available, and show the url of this video
+     * @param url, url of video
+     */
     private void showDownloadAvailable(String url){
         Alert alert=new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Available!!");
@@ -158,6 +227,91 @@ public class Controller {
         alert.getDialogPane().setContent(link);
         alert.showAndWait();
     }
+
+    public void downloadCurrentVideo(){
+        String url=checkDownloadAvailability();
+        //String url="https://gss3.baidu.com/6LZ0ej3k1Qd3ote6lo7D0j9wehsv/tieba-smallvideo/60_a435cdde645dfbc07d6b03dcbff01f66.mp4";
+        if (url==null){
+            showDownloadNotAvailable();
+            return;
+        }
+        String dir=directory.getText();
+        String prefix=filenamePrefix.getText();
+        String suffix=filenameSuffix.getText();
+
+        Pattern pattern=Pattern.compile("^[0-9]+$");
+        Matcher matcher=pattern.matcher(suffix);
+        if (!matcher.find()){
+            suffix="0";
+            filenameSuffix.setText("0");
+        }else{
+            filenameSuffix.setText((Integer.parseInt(suffix)+1)+"");
+        }
+
+        if (directory==null || directory.getText().equals("")){
+            showDirectoryNotSelected();
+            return;
+        }
+
+        DownloadHelper.Download download=new DownloadHelper.Download(url, dir,prefix+"_"+suffix, new DownloadHelper.DCallback() {
+            @Override
+            public void onStart(DownloadHelper.Download download) {
+                //System.out.println("start");
+            }
+
+            @Override
+            public void onPause(DownloadHelper.Download download) {
+                //System.out.println("pause");
+            }
+
+            @Override
+            public void onStop(DownloadHelper.Download download) {
+                //System.out.println("stop");
+            }
+
+            @Override
+            public void onRestart(DownloadHelper.Download download) {
+                //System.out.println("restart");
+            }
+
+            @Override
+            public void onWaiting(DownloadHelper.Download download) {
+                //System.out.println("waiting");
+            }
+
+            @Override
+            public void onStarting(DownloadHelper.Download download) {
+                //System.out.println("starting");
+            }
+
+            @Override
+            public void onProgressUpdated(DownloadHelper.Download download) {
+                //System.out.println("update progress");
+            }
+
+            @Override
+            public void onError(DownloadHelper.Download download) {
+                //System.out.println("error");
+            }
+
+            @Override
+            public void onDone(DownloadHelper.Download download) {
+                //System.out.println("done,size:"+download.getTotalSize());
+            }
+        });
+        downloadHelper.commitDownload(download);
+    }
+
+    private void showDirectoryNotSelected(){
+        Alert alert=new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Error");
+        alert.setContentText("Directory Not Selected.");
+        alert.showAndWait();
+    }
+
+    /**
+     * call system browser to download current video
+     */
     public void downloadOnBrowser(){
         String url=checkDownloadAvailability();
         if (url!=null){
@@ -166,6 +320,11 @@ public class Controller {
             showDownloadNotAvailable();
         }
     }
+
+    /**
+     * call system browser to download video
+     * @param url, url of the video
+     */
     public void downloadOnBrowser(String url){
         try{
             //Desktop.getDesktop().browse(new URI(url));
@@ -174,6 +333,12 @@ public class Controller {
             showErrorOpeningBrowser();
         }
     }
+
+    /**
+     * open system browser
+     * @param url, url to open
+     * @throws Exception,
+     */
     private void browse(String url) throws Exception {
         // 获取操作系统的名字
         String osName = System.getProperty("os.name", "");
@@ -207,18 +372,34 @@ public class Controller {
         }
     }
 
+    /**
+     * show error alert if failed to open browser
+     *
+     */
     private void showErrorOpeningBrowser(){
         Alert alert=new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Error");
         alert.setContentText("Failed to open url on system web browser.");
         alert.showAndWait();
     }
-    private void showAboutInfo(){
+
+    /**
+     * show information about this app
+     */
+    public void showAboutInfo(){
         String aboutInfo="This application is designed only for imomoe.jp. It won't work on other site. This application is totally free, so be careful of the liars, you can find sourcecode of this app on github.com";
         Alert alert=new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("About");
         alert.setContentText(aboutInfo);
         alert.setResizable(true);
         alert.show();
+    }
+
+    /**
+     * show download progress
+     */
+    public void showDownloadInfo(){
+        DownloadForm downloadForm=new DownloadForm();
+        downloadForm.show();
     }
 }

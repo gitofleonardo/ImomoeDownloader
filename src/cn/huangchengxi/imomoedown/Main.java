@@ -1,6 +1,7 @@
 package cn.huangchengxi.imomoedown;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -16,8 +17,11 @@ public class Main extends Application {
         primaryStage.setTitle("ImomoeDown");
         primaryStage.setScene(new Scene(root,1200,800));
         Controller controller=loader.getController();
-        controller.init();
+        controller.init(primaryStage);
         primaryStage.show();
+        primaryStage.setOnCloseRequest(e->{
+            Platform.exit();
+        });
     }
 
     public static void main(String[] args) {

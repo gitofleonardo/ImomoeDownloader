@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<HBox alignment="CENTER" xmlns="http://javafx.com/javafx/10.0.2-internal" xmlns:fx="http://javafx.com/fxml/1" fx:controller="cn.huangchengxi.imomoedown.ItemController">
+   <children>
+      <Label fx:id="filename" maxWidth="200.0" text="Label" />
+      <ProgressBar fx:id="progress" prefWidth="200.0" progress="0.0">
+         <padding>
+            <Insets left="10.0" />
+         </padding></ProgressBar>
+      <ImageView fx:id="successIcon" fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true" visible="false"/>
+   </children>
+</HBox>
