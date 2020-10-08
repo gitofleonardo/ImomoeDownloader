@@ -15,6 +15,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -22,17 +23,20 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 public class DownloadHelper {
     private DownloadHelper(){ }
-    private static DownloadHelper helper;
+    private static volatile DownloadHelper helper;
     private ExecutorService service;
     private int DOWNLOAD_THREAD_COUNT = 5;
     private ConcurrentHashMap<String,Download> downloads=new ConcurrentHashMap<>();
     private ObservableList<Download> downloadObservableList=FXCollections.observableArrayList();
 
-    public static synchronized DownloadHelper newInstance(){
+    public static DownloadHelper instance(){
         if (helper==null){
-            helper=new DownloadHelper();
-            helper.service=Executors.newFixedThreadPool(helper.DOWNLOAD_THREAD_COUNT);
-            return helper;
+            synchronized (DownloadHelper.class){
+                if (helper==null){
+                    helper=new DownloadHelper();
+                    helper.service=Executors.newFixedThreadPool(helper.DOWNLOAD_THREAD_COUNT);
+                }
+            }
         }
         return helper;
     }
@@ -70,6 +74,12 @@ public class DownloadHelper {
         if (download.stateNow== Download.STATE.STOPPED || download.stateNow== Download.STATE.PAUSED){
             service.submit(download);
         }
+    }
+    public synchronized void shutdown(){
+        for (Download d:downloads.values()){
+            d.stop();
+        }
+        service.shutdownNow();
     }
 
     public static class Download implements Runnable{
@@ -142,6 +152,9 @@ public class DownloadHelper {
         @Override
         public void run() {
             //todo download file from url
+            File file=null;
+            URLConnection connection=null;
+            RandomAccessFile raf=null;
             try{
                 stateNow=STATE.STARTING;
                 Platform.runLater(() -> callback.onStarting(this));
@@ -151,10 +164,10 @@ public class DownloadHelper {
                 URLConnection testConnection=new URL(getUrl()).openConnection();
                 totalSize.setValue(testConnection.getContentLengthLong());
 
-                URLConnection connection=url.openConnection();
+                connection=url.openConnection();
                 connection.setDoInput(true);
 
-                File file=new File(location+"/"+filename);
+                file=new File(location+"/"+filename);
 
                 downloadedSize.setValue(file.length());
                 connection.setRequestProperty("Range","bytes="+downloadedSize.getValue()+"-"+totalSize.getValue());
@@ -180,7 +193,7 @@ public class DownloadHelper {
                 byte[] buffer=new byte[8192];
                 int len;
                 InputStream is=connection.getInputStream();
-                RandomAccessFile raf=new RandomAccessFile(location+"/"+filename,"rwd");
+                raf=new RandomAccessFile(location+"/"+filename,"rwd");
                 raf.seek(downloadedSize.getValue());
 
                 while ((len=is.read(buffer))!=-1){
@@ -209,6 +222,12 @@ public class DownloadHelper {
 
                 stateNow=STATE.ERROR;
                 Platform.runLater(()->callback.onError(this));
+            }finally {
+                try{
+                    if (raf!=null){
+                        raf.close();
+                    }
+                }catch (Exception ignored){}
             }
         }
 

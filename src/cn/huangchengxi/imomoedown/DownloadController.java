@@ -11,7 +11,7 @@ public class DownloadController {
     @FXML
     public ListView<DownloadHelper.Download> downloadList;
 
-    private DownloadHelper helper=DownloadHelper.newInstance();
+    private DownloadHelper helper=DownloadHelper.instance();
 
     public void init(){
         downloadList.setItems(helper.mapAsList());

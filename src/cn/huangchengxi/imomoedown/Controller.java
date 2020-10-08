@@ -60,7 +60,7 @@ public class Controller {
 
     private WebEngine webEngine;
 
-    private DownloadHelper downloadHelper=DownloadHelper.newInstance();
+    private DownloadHelper downloadHelper=DownloadHelper.instance();
 
     private String defaultLocation="/home/huangchengxi/Downloads";
 
@@ -247,6 +247,7 @@ public class Controller {
         }else{
             filenameSuffix.setText((Integer.parseInt(suffix)+1)+"");
         }
+        suffix+=url.substring(url.lastIndexOf("."));
 
         if (directory==null || directory.getText().equals("")){
             showDirectoryNotSelected();
